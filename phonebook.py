@@ -61,8 +61,6 @@ class Record:
             if Phone(phone):
                 self.phones.append(Phone(phone))
                 print(f"Phone {phone} added to the Contacts list")
-               # print(type(Phone(phone))) #<class '__main__.Phone'>
-                # print(self.phones) #[<__main__.Phone object at 0x000001CD9F7DB0E0>, <__main__.Phone object at 0x000001CD9F7DB1D0>]
                 return self.phones
             
             else: print(f"Unsupported format of the phone number {phone}. Please enter a valid number.")
