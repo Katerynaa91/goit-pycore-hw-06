@@ -41,7 +41,7 @@ class Phone(Field):
 
     def __init__(self, value):
         super().__init__(value)
-        if re.match(Phone.phone_pattern, value):
+        if re.match(Phone.phone_pattern, str(value)):
             self.value = value
         else: self.value = None
 
@@ -55,46 +55,49 @@ class Record:
     def add_phone(self, phone):
         """Метод для додавання номерів телефонів для певного контакту. Якщо фомат номеру невірний (повертається None) 
         або якщо телефон вже є у списку телефонів, виводиться відповідне повідомлення."""
-        if Phone(phone).value in self.phones:
+        if Phone(phone) in self.phones:
             print(f"The phone number {phone} is already in your Contacts list")
         else:
-            if Phone(phone).value:
-                self.phones.append(Phone(phone).value)
+            if Phone(phone):
+                self.phones.append(Phone(phone))
                 print(f"Phone {phone} added to the Contacts list")
+               # print(type(Phone(phone))) #<class '__main__.Phone'>
+                # print(self.phones) #[<__main__.Phone object at 0x000001CD9F7DB0E0>, <__main__.Phone object at 0x000001CD9F7DB1D0>]
                 return self.phones
+            
             else: print(f"Unsupported format of the phone number {phone}. Please enter a valid number.")
     
     def remove_phone(self, phone):
         """Метод для видалення телефонів контакту. Якщо номер не знайдено у списку телефонів, виводиться відповідне повідомлення."""
-        if Phone(phone).value in self.phones:
-            self.phones.remove(Phone(phone).value)
-            print("Phone number removed from the Contacts list.")
-        else:
-            print(f"Couldn't remove the phone. Phone number {phone} not in the Contacts list")
+        for p in self.phones:
+            if str(p) == phone:
+                self.phones.remove(p)
+                print(f"Phone number {str(p)} removed from the Contacts list.")
+            else:
+                print(f"Couldn't remove the phone. Phone number {phone} not in the Contacts list")
 
     def edit_phone(self, old_phone, new_phone):
         """Метод для редагування телефонів контакту. Якщо новий номер не відповідає формату телефону, повертається попередній список телефонів.
         Перевіряється, чи номер телефону, який потрібно змінити, існує у списку телефонів даного контакту."""
-        old_phone = Phone(old_phone).value
-        new_phone = Phone(new_phone).value
-        if not new_phone:
+        
+        if not Phone(new_phone).value:
             print("Unsupported format of the new number")
-            return self.phones
-        if old_phone in self.phones:
-            for index, number in enumerate(self.phones):
-                if number == old_phone:
-                    self.phones[index] = new_phone
-        else: print("The number you are trying to replace is not in your Contacts list")
+            
+        else:
+            if old_phone in [p.value for p in self.phones]:
+                self.phones[[p.value for p in self.phones].index(old_phone)] = Phone(new_phone)
+                
+            else: print("The number you are trying to replace is not in your Contacts list")
     
     def find_phone(self, phone):
         """Метод для пошуку номера телефону контакту у списку його телефонів. Якщо телефон не знайдено, викликається виключення."""
-        if Phone(phone).value in self.phones:
-            return Phone(phone).value
+        if phone in [p.value for p in self.phones]:
+            return Phone(phone)
         else: 
             raise ValueError("Phone number not in your Contacts list")
 
     def __str__(self):
-        return f"Contact name: {self.name.value}, phones: {'; '.join(p for p in self.phones)}"
+        return f"Contact name: {self.name.value}, phones: {'; '.join(p.value for p in self.phones)}"
     
 
 class AddressBook(UserDict):
@@ -108,12 +111,10 @@ class AddressBook(UserDict):
         У якості ключа - ім'я об'єкта класу Record, значення - список телефонів об'єкта класу Record.
         Обробляється помилка AttributeError, яка виникає, якщо введене ім'я не є об'єктом класу Record."""
         try:
-            self.data[key.name.value] = key.phones
+            self.data[key.name.value] = [p.value for p in key.phones]
         except AttributeError:
-            print(f"No phones found for {key}")
-
-        # return self.data
-
+            print(f"No Record found for {key}")
+        
     def find (self, key):
         """Метод для пошуку запису за ім'ям-ключем у словнику контактів. Обробляється помилка, якщо імені немає у словнику контактів.""" 
         try:
@@ -130,36 +131,27 @@ class AddressBook(UserDict):
 
 
 if __name__ == "__main__":
+
+
     book = AddressBook()
 
-    # Створення запису для John
-    john_record = Record("John")
-    john_record.add_phone("1234567890")
-    john_record.add_phone("5555555555")
-
-    # Додавання запису John до адресної книги
-    book.add_record(john_record)
-
-    # Створення та додавання нового запису для Jane
-    jane_record = Record("Jane")
-    jane_record.add_phone("9876543210")
-    book.add_record(jane_record)
-
-    # Виведення всіх записів у книзі
-    for name, record in book.data.items():
-        print(record)
-
-    # Знаходження та редагування телефону для John
-    john = book.find("John")
-    john_record.edit_phone("1234567890", "1112223333")
-
-    print(john_record)  
+    john = Record("John")
+    john.add_phone("1234567890")
+    john.add_phone("5555555555")
     print(john)
+    john.edit_phone("1234567890", "1223334444")
+    print(john)
+    found_phone = john.find_phone("5555555555")
+    print(f"{john.name.value} found phone: {found_phone}")
+    jane = Record("Jane")
+    jane.add_phone("1231231231")
+    book.add_record(john)
+    book.add_record(jane)
 
-    # Пошук конкретного телефону у записі John
-    found_phone = john_record.find_phone("5555555555")
-    print(f"{john_record.name}: {found_phone}")  
+    for name, record in book.data.items():
+        print(name, record)
 
-    # Видалення запису Jane
-    book.delete("Jane")
-    print(book)
+    print(book.find("john"))
+    book.delete("jane")
+    for name, record in book.data.items():
+        print(name, record)
